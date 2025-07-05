@@ -30,9 +30,9 @@ graph TD
         E[PaymeeRouter.sol] -->|lzSend| F[LayerZero Endpoint]
     end
 
-    B --> G[User Wallet (Privy)]
-    C --> H[World ID Proof]
-    F --> I[Destination Chain(s)]
+    B --> G["User Wallet (Privy)"]
+    C --> H["World ID Proof"]
+    F --> I["Destination Chain(s)"]
     I --> G
 ```
 
@@ -47,6 +47,7 @@ Flow: a verified freelancer mints a payment link. When a client pays, the Paymee
 • Tailwind CSS 4  
 • Privy JS & embedded wallets  
 • LayerZero V2 SDK / OApp contracts  
+• Hardhat 2.25 + Viem toolbox  
 • World ID JS Widget  
 • Turbo Repo + pnpm workspace  
 
