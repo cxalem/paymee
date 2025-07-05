@@ -29,7 +29,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
     mapping(bytes32 => PaymentLink) public paymentLinks;
     mapping(bytes32 => bool) public processedPayments;
     
-    event PaymentLinkCreated(bytes32 indexed linkId, address indexed freelancer, uint256 amount);
+    event PaymentLinkCreated(bytes32 indexed linkId, address indexed freelancer, uint256 amount, address token, uint32 destinationEid, string metadata);
     event CrossChainPaymentInitiated(bytes32 indexed linkId, address indexed payer, uint256 amount);
     event PaymentCompleted(bytes32 indexed linkId);
 
@@ -52,6 +52,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
             block.number
         ));
 
+        
         paymentLinks[linkId] = PaymentLink({
             freelancer: msg.sender,
             amount: _amount,
@@ -62,7 +63,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
             metadata: _metadata
         });
 
-        emit PaymentLinkCreated(linkId, msg.sender, _amount);
+        emit PaymentLinkCreated(linkId, msg.sender, _amount, _token, _destinationEid, _metadata);
         return linkId;
     }
 
