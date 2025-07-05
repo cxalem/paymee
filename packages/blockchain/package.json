@@ -11,7 +11,14 @@
   "license": "ISC",
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
+    "@layerzerolabs/lz-evm-oapp-v2": "^3.0.110",
     "@nomicfoundation/hardhat-toolbox-viem": "^4.0.0",
+    "@openzeppelin/contracts": "^5.3.0",
+    "dotenv": "^17.0.1",
+    "ethers": "^6.15.0",
     "hardhat": "^2.25.0"
+  },
+  "dependencies": {
+    "@layerzerolabs/oapp-evm": "^0.3.2"
   }
 }
