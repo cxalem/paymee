@@ -20,13 +20,13 @@ The result is a friction-less payment UX for both sides:
 ## 🏗 Architecture  
 ```mermaid
 graph TD
-    subgraph Frontend (packages/site)
+    subgraph "Frontend (packages/site)"
         A[Next.js - React 19] --> B(Privy SDK)
         A --> C(World ID Widget)
         A --> D(Payment Link Page)
     end
 
-    subgraph Contracts (packages/blockchain)
+    subgraph "Contracts (packages/blockchain)"
         E[PaymeeRouter.sol] -->|lzSend| F[LayerZero Endpoint]
     end
 
