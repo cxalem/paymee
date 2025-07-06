@@ -21,13 +21,11 @@ export function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user && user.wallet) {
+    if (ready && user) {
+      console.log("User authenticated, redirecting to dashboard");
       router.push("/dashboard");
     }
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
+  }, [user, router, ready]);
 
   if (!ready) {
     return <div>Loading...</div>;
@@ -44,6 +42,7 @@ export function Login() {
   };
 
   if (user && !user?.wallet) {
+    console.log("******** HERE *********", user);
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <Button onClick={() => createWallet()}>Create Wallet</Button>
@@ -52,6 +51,7 @@ export function Login() {
   }
 
   if (user) {
+    console.log("******** HERE *********", user);
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <Button onClick={() => logout()}>Logout</Button>

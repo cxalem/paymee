@@ -12,9 +12,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       clientId={PRIVY_CLIENT_ID}
       config={{
         embeddedWallets: {
-          ethereum: {
-            createOnLogin: "users-without-wallets",
-          },
+          createOnLogin: "users-without-wallets",
         },
       }}
     >
