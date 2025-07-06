@@ -17,35 +17,14 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { getWETHBalance, getETHBalance } from "@/lib/metamask-utils";
-import SendETHServerComponent from "@/components/send-eth-server-component";
 
 // Sample data
-const invoiceData = [
-  {
-    title: "Logo Design",
-    issuedTo: "Alejandro Mena",
-    status: "pending" as const,
-    icon: "PenTool" as const,
-  },
-  {
-    title: "Web Design",
-    issuedTo: "John Doe",
-    status: "paid" as const,
-    icon: "LayoutDashboard" as const,
-  },
-  {
-    title: "Product Development",
-    issuedTo: "invoices@decentralstudio.xyz",
-    status: "expired" as const,
-    icon: "Package" as const,
-  },
-  {
-    title: "Web Design",
-    issuedTo: "John Doe",
-    status: "paid" as const,
-    icon: "LayoutDashboard" as const,
-  },
-];
+const invoiceData = [] as {
+  title: string;
+  issuedTo: string;
+  status: "pending";
+  icon: "PenTool";
+}[];
 
 // Icon mapping for type safety
 const iconMap = {
