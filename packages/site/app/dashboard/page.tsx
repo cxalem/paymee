@@ -15,22 +15,17 @@ import {
   PenTool,
   LayoutDashboard,
   RefreshCw,
+  DollarSign,
 } from "lucide-react";
 import { getWETHBalance, getETHBalance } from "@/lib/metamask-utils";
-
-// Sample data
-const invoiceData = [] as {
-  title: string;
-  issuedTo: string;
-  status: "pending";
-  icon: "PenTool";
-}[];
+import { CreatePaymee, PayMeeData } from "@/components/create-paymee";
 
 // Icon mapping for type safety
 const iconMap = {
   PenTool,
   LayoutDashboard,
   Package,
+  DollarSign,
 } as const;
 
 type IconName = keyof typeof iconMap;
@@ -222,25 +217,21 @@ function AccountSummary({ user }: AccountSummaryProps) {
           </Button>
         </div>
       </div>
-      <Button className="bg-violet-600 hover:bg-violet-700 text-white transition-all duration-150 shadow-lg">
-        <UserPlus className="w-4 h-4 mr-2" />
-        Create Paymee
-      </Button>
+      <CreatePaymee />
     </div>
   );
 }
 
 // InvoiceRow Component
 interface InvoiceRowProps {
-  title: string;
-  issuedTo: string;
-  status: "pending" | "paid" | "expired";
-  icon: IconName;
+  paymee: PayMeeData;
 }
 
-function InvoiceRow({ title, issuedTo, status, icon }: InvoiceRowProps) {
-  // Get the icon component dynamically with type safety
-  const IconComponent = iconMap[icon] || Package;
+function InvoiceRow({ paymee }: InvoiceRowProps) {
+  const router = useRouter();
+  
+  // Use DollarSign icon for all PayMees
+  const IconComponent = DollarSign;
 
   // Status color mapping
   const statusColors = {
@@ -249,22 +240,36 @@ function InvoiceRow({ title, issuedTo, status, icon }: InvoiceRowProps) {
     expired: "text-red-500",
   } as const;
 
+  // Format the created date
+  const formatDate = (isoString: string) => {
+    return new Date(isoString).toLocaleDateString();
+  };
+
+  const handleClick = () => {
+    router.push(`/pay/${paymee.id}`);
+  };
+
   return (
-    <div className="bg-[#26242B] hover:bg-[#32303A] rounded-xl px-6 py-4 flex items-center justify-between w-full transition-all duration-150 shadow-lg cursor-pointer">
+    <div 
+      onClick={handleClick}
+      className="bg-[#26242B] hover:bg-[#32303A] rounded-xl px-6 py-4 flex items-center justify-between w-full transition-all duration-150 shadow-lg cursor-pointer"
+    >
       {/* Left - Icon */}
       <div className="w-12 h-12 bg-gray-600/30 rounded-xl flex items-center justify-center">
         <IconComponent className="w-6 h-6 text-gray-400" />
       </div>
 
-      {/* Middle - Title and Issued To */}
+      {/* Middle - Concept, Client Name, and Amount */}
       <div className="flex-1 ml-4">
-        <p className="font-medium text-white">{title}</p>
-        <p className="text-sm text-muted-foreground">Issued to: {issuedTo}</p>
+        <p className="font-medium text-white">{paymee.concept}</p>
+        <p className="text-sm text-muted-foreground">
+          Client: {paymee.clientName} • {paymee.amount} ETH • {formatDate(paymee.createdAt)}
+        </p>
       </div>
 
       {/* Right - Status */}
-      <div className={`flex items-center gap-2 ${statusColors[status]}`}>
-        <span className="capitalize font-medium">{status}</span>
+      <div className={`flex items-center gap-2 ${statusColors[paymee.status]}`}>
+        <span className="capitalize font-medium">{paymee.status}</span>
         <span className="w-2.5 h-2.5 rounded-full bg-current" />
       </div>
     </div>
@@ -277,8 +282,40 @@ interface DashboardPageProps {
 }
 
 function DashboardPage({ user }: DashboardPageProps) {
-  // For now, show a message if no PayMees exist
-  const hasPayMees = invoiceData.length > 0;
+  const [paymees, setPaymees] = useState<PayMeeData[]>([]);
+
+  // Load PayMees from localStorage
+  const loadPaymees = () => {
+    try {
+      const savedPaymees = localStorage.getItem('paymees');
+      if (savedPaymees) {
+        const parsedPaymees = JSON.parse(savedPaymees) as PayMeeData[];
+        setPaymees(parsedPaymees);
+      }
+    } catch (error) {
+      console.error('Error loading PayMees from localStorage:', error);
+    }
+  };
+
+  // Load PayMees on component mount
+  useEffect(() => {
+    loadPaymees();
+  }, []);
+
+  // Listen for paymeeCreated events
+  useEffect(() => {
+    const handlePaymeeCreated = () => {
+      loadPaymees();
+    };
+
+    window.addEventListener('paymeeCreated', handlePaymeeCreated);
+    return () => {
+      window.removeEventListener('paymeeCreated', handlePaymeeCreated);
+    };
+  }, []);
+
+  // Check if there are any PayMees
+  const hasPayMees = paymees.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto py-10 space-y-4">
@@ -286,13 +323,10 @@ function DashboardPage({ user }: DashboardPageProps) {
 
       {hasPayMees ? (
         <>
-          {invoiceData.map((invoice, index) => (
+          {paymees.map((paymee) => (
             <InvoiceRow
-              key={index}
-              title={invoice.title}
-              issuedTo={invoice.issuedTo}
-              status={invoice.status}
-              icon={invoice.icon}
+              key={paymee.id}
+              paymee={paymee}
             />
           ))}
         </>
@@ -307,10 +341,10 @@ function DashboardPage({ user }: DashboardPageProps) {
           <p className="text-muted-foreground mb-4">
             Create your first PayMee to start accepting payments
           </p>
-          <Button className="bg-violet-600 hover:bg-violet-700 text-white">
+          <CreatePaymee>
             <UserPlus className="w-4 h-4 mr-2" />
             Create Your First PayMee
-          </Button>
+          </CreatePaymee>
         </div>
       )}
     </div>

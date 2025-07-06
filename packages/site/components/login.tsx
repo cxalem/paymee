@@ -53,8 +53,8 @@ export function Login() {
   if (user) {
     console.log("******** HERE *********", user);
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <Button onClick={() => logout()}>Logout</Button>
+      <div className="flex flex-col items-center justify-center">
+        <Button className="bg-violet-600 hover:bg-violet-700 text-white" onClick={() => logout()}>Logout</Button>
       </div>
     );
   }
