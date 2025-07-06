@@ -3,16 +3,56 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { LayoutDashboard, BarChart3, HelpCircle } from "lucide-react";
+import Link from "next/link";
+
+const items = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "All PayMees",
+    url: "/paymees",
+    icon: BarChart3,
+  },
+  {
+    title: "Support",
+    url: "/support",
+    icon: HelpCircle,
+  },
+];
 
 export function AppSidebar() {
   return (
-    <Sidebar className="bg-white">
-      <SidebarHeader />
-      <SidebarContent className="">
-        <SidebarGroup />
-        <SidebarGroup />
+    <Sidebar>
+      <SidebarHeader className="p-4">
+        <div className="text-white text-xl font-bold">Platform</div>
+      </SidebarHeader>
+      <SidebarContent className="px-2 text-white/90">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>

@@ -2,7 +2,7 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Login } from "@/components/login";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,10 @@ import {
   Package,
   PenTool,
   LayoutDashboard,
+  RefreshCw,
 } from "lucide-react";
-
+import { getWETHBalance, getETHBalance } from "@/lib/metamask-utils";
+import SendETHServerComponent from "@/components/send-eth-server-component";
 
 // Sample data
 const invoiceData = [
@@ -55,22 +57,123 @@ const iconMap = {
 type IconName = keyof typeof iconMap;
 
 // AccountSummary Component
-function AccountSummary() {
+interface AccountSummaryProps {
+  user: any; // Privy user object
+}
+
+function AccountSummary({ user }: AccountSummaryProps) {
+  const [balances, setBalances] = useState<{
+    eth: string;
+    weth: string;
+  }>({
+    eth: "0.00",
+    weth: "0.00",
+  });
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Fetch balances
+  const fetchBalances = async () => {
+    if (!user.wallet?.address) return;
+
+    setBalanceLoading(true);
+    setBalanceError(null);
+
+    try {
+      const [ethBalance, wethBalance] = await Promise.all([
+        getETHBalance(user.wallet.address as `0x${string}`, "sepolia"),
+        getWETHBalance(user.wallet.address as `0x${string}`, "sepolia"),
+      ]);
+
+      setBalances({
+        eth: ethBalance.formatted,
+        weth: wethBalance.formatted,
+      });
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+      setBalanceError("Failed to fetch balances");
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  // Fetch balances on component mount and when user changes
+  useEffect(() => {
+    if (user.wallet?.address) {
+      fetchBalances();
+    }
+  }, [user.wallet?.address]);
+  // Extract user information
+  const getUserName = () => {
+    if (user.email?.address) {
+      return user.email.address.split("@")[0];
+    }
+    if (user.phone?.number) {
+      return user.phone.number;
+    }
+    if (user.google?.name) {
+      return user.google.name;
+    }
+    if (user.discord?.username) {
+      return user.discord.username;
+    }
+    return "User";
+  };
+
+  const getUserInitials = () => {
+    const name = getUserName();
+    const nameParts = name.split(" ");
+    if (nameParts.length >= 2) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getWalletAddress = () => {
+    if (user.wallet?.address) {
+      const addr = user.wallet.address;
+      return `${addr.substring(0, 6)}…${addr.substring(addr.length - 4)}`;
+    }
+    return "No wallet connected";
+  };
+
+  const copyWalletAddress = async () => {
+    if (user.wallet?.address) {
+      try {
+        await navigator.clipboard.writeText(user.wallet.address);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (error) {
+        console.error("Failed to copy address:", error);
+      }
+    }
+  };
+
+  const getUserAvatar = () => {
+    if (user.google?.profilePictureUrl) {
+      return user.google.profilePictureUrl;
+    }
+    return null;
+  };
+
   return (
-    <div className="bg-[#1F1D23] rounded-xl p-6 flex items-center justify-between shadow-lg transition-all duration-150">
+    <div className="rounded-xl flex gap-4 items-center justify-between shadow-lg transition-all duration-150">
       {/* Left block */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 bg-[#1F1D23] w-full p-4 rounded-xl">
         <Avatar className="w-14 h-14 rounded-xl">
-          <AvatarImage src="/placeholder.svg?height=56&width=56" />
+          <AvatarImage
+            src={getUserAvatar() || "/placeholder.svg?height=56&width=56"}
+          />
           <AvatarFallback className="rounded-xl bg-gray-600 text-white font-semibold">
-            JD
+            {getUserInitials()}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex flex-col gap-1">
-          <h3 className="text-white font-semibold">John Doe</h3>
+          <h3 className="text-white font-semibold">{getUserName()}</h3>
           <p className="font-mono text-muted-foreground/60 text-sm">
-            3CKuvh…AAWc
+            {getWalletAddress()}
           </p>
         </div>
 
@@ -79,33 +182,71 @@ function AccountSummary() {
             size="icon"
             variant="ghost"
             className="w-8 h-8 text-muted-foreground hover:text-white hover:bg-gray-700 transition-all duration-150"
+            onClick={copyWalletAddress}
+            title={copySuccess ? "Copied!" : "Copy wallet address"}
           >
-            <Copy className="w-4 h-4" />
+            <Copy
+              className={`w-4 h-4 ${copySuccess ? "text-green-400" : ""}`}
+            />
           </Button>
           <Button
             size="icon"
             variant="ghost"
             className="w-8 h-8 text-muted-foreground hover:text-white hover:bg-gray-700 transition-all duration-150"
+            title="Show QR code"
           >
             <QrCode className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Center */}
-      <div className="w-12 h-12 bg-gray-600/30 rounded-xl flex items-center justify-center">
-        <Wallet className="w-6 h-6 text-gray-400" />
-      </div>
-
       {/* Right */}
-      <div className="flex items-center gap-6">
-        <div className="text-4xl font-semibold text-white">$15,597.84</div>
-
-        <Button className="bg-violet-600 hover:bg-violet-700 text-white transition-all duration-150 shadow-lg">
-          <UserPlus className="w-4 h-4 mr-2" />
-          Create Paymee
-        </Button>
+      <div className="bg-[#1F1D23] h-full p-4 rounded-xl w-full flex justify-between items-center gap-6">
+        <div className="w-12 h-12 bg-gray-600/30 rounded-xl flex items-center justify-center">
+          <Wallet className="w-6 h-6 text-gray-400" />
+        </div>
+        <div className="flex items-center gap-4">
+          {!user.wallet?.address ? (
+            <div className="text-2xl font-semibold text-muted-foreground">
+              No wallet connected
+            </div>
+          ) : (
+            <div className="flex flex-col items-end">
+              <div className="text-2xl font-semibold text-white flex items-center gap-2">
+                {balanceLoading ? (
+                  <RefreshCw className="w-8 h-8 animate-spin" />
+                ) : (
+                  `${parseFloat(balances.weth).toFixed(4)} WETH`
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {balanceLoading
+                  ? "Loading..."
+                  : `${parseFloat(balances.eth).toFixed(4)} ETH`}
+              </div>
+              {balanceError && (
+                <div className="text-xs text-red-400 mt-1">{balanceError}</div>
+              )}
+            </div>
+          )}
+          <Button
+            onClick={fetchBalances}
+            disabled={balanceLoading}
+            size="icon"
+            variant="ghost"
+            className="w-8 h-8 text-muted-foreground hover:text-white hover:bg-gray-700 transition-all duration-150"
+            title="Refresh balances"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${balanceLoading ? "animate-spin" : ""}`}
+            />
+          </Button>
+        </div>
       </div>
+      <Button className="bg-violet-600 hover:bg-violet-700 text-white transition-all duration-150 shadow-lg">
+        <UserPlus className="w-4 h-4 mr-2" />
+        Create Paymee
+      </Button>
     </div>
   );
 }
@@ -152,20 +293,47 @@ function InvoiceRow({ title, issuedTo, status, icon }: InvoiceRowProps) {
 }
 
 // DashboardPage Component
-function DashboardPage() {
+interface DashboardPageProps {
+  user: any; // Privy user object
+}
+
+function DashboardPage({ user }: DashboardPageProps) {
+  // For now, show a message if no PayMees exist
+  const hasPayMees = invoiceData.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto py-10 space-y-4">
-      <AccountSummary />
+      <AccountSummary user={user} />
 
-      {invoiceData.map((invoice, index) => (
-        <InvoiceRow
-          key={index}
-          title={invoice.title}
-          issuedTo={invoice.issuedTo}
-          status={invoice.status}
-          icon={invoice.icon}
-        />
-      ))}
+      {hasPayMees ? (
+        <>
+          {invoiceData.map((invoice, index) => (
+            <InvoiceRow
+              key={index}
+              title={invoice.title}
+              issuedTo={invoice.issuedTo}
+              status={invoice.status}
+              icon={invoice.icon}
+            />
+          ))}
+        </>
+      ) : (
+        <div className="bg-[#1F1D23] rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-gray-600/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Package className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-white font-semibold text-lg mb-2">
+            No PayMees yet
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            Create your first PayMee to start accepting payments
+          </p>
+          <Button className="bg-violet-600 hover:bg-violet-700 text-white">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Create Your First PayMee
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -204,7 +372,7 @@ export default function FreelanceDashboard() {
   }
   return (
     <div className="min-h-screen bg-[#130F16] text-slate-100">
-      <DashboardPage />
+      <DashboardPage user={user} />
     </div>
   );
 }

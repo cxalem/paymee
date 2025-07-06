@@ -10,7 +10,7 @@ export default function RootLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full bg-[#130F16]">
-        <SidebarTrigger />
+        <SidebarTrigger className="" />
         {children}
       </main>
     </SidebarProvider>

@@ -229,8 +229,8 @@ export async function sendOFTServerAction(
     
     // Add default lzReceive option if no custom options provided
     if (!extraLzReceiveOptions || extraLzReceiveOptions.length === 0) {
-      options = options.addExecutorLzReceiveOption(200000, 0); // 200k gas, 0 value
-      console.log("⚙️ Added default lzReceive option: 200000 gas, 0 value");
+      options = options.addExecutorLzReceiveOption(500000, 0); // 500k gas (increased from 200k), 0 value
+      console.log("⚙️ Added default lzReceive option: 500000 gas, 0 value");
     }
 
     // Add lzReceive options

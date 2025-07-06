@@ -125,7 +125,7 @@ export async function sendOFT(params: SendOFTParams): Promise<SendOFTResult> {
   const toBytes = addressToBytes32(to);
 
   // Build basic options (you can extend this for more complex scenarios)
-  const options = Options.newOptions().addExecutorLzReceiveOption(200000, 0);
+  const options = Options.newOptions().addExecutorLzReceiveOption(500000, 0); // 500k gas (increased from 200k)
   const extraOptions = options.toHex();
 
   // Prepare send parameters

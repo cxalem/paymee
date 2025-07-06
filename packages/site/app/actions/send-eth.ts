@@ -113,8 +113,8 @@ export async function sendETHServerAction(
     // Convert recipient address to bytes32
     const recipientBytes32 = ethers.zeroPadValue(to, 32);
 
-    // Prepare send parameters with default execution options
-    const options = Options.newOptions().addExecutorLzReceiveOption(200000, 0); // 200k gas, 0 value
+    // Prepare send parameters with increased execution options for destination chain
+    const options = Options.newOptions().addExecutorLzReceiveOption(500000, 0); // 500k gas (increased from 200k), 0 value
     const sendParam = {
       dstEid,
       to: recipientBytes32,
