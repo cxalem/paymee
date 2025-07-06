@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import { OApp, MessagingFee, Origin } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import { MessagingReceipt } from "@layerzerolabs/oapp-evm/contracts/oapp/OAppSender.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {OApp, MessagingFee, Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {MessagingReceipt} from "@layerzerolabs/oapp-evm/contracts/oapp/OAppSender.sol";
+import {OAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/OAppReceiver.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {OFTAdapter} from "@layerzerolabs/oft-evm/contracts/OFTAdapter.sol";
+import {OFTCore} from "@layerzerolabs/oft-evm/contracts/OFTCore.sol";
 
-contract PaymeeRouter is OApp, ReentrancyGuard {
+contract PaymeeRouter is OFTAdapter, ReentrancyGuard {
     struct PaymentLink {
         address freelancer;
         uint256 amount;
@@ -23,20 +26,32 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
         address payer;
         uint256 amount;
         address token;
-        bytes32 freelancerSolanaAddress;
+        address freelancerAddress; // Freelancer's address on the destination chain
     }
 
     mapping(bytes32 => PaymentLink) public paymentLinks;
     mapping(bytes32 => bool) public processedPayments;
     
-    event PaymentLinkCreated(bytes32 indexed linkId, address indexed freelancer, uint256 amount, address token, uint32 destinationEid, string metadata);
-    event CrossChainPaymentInitiated(bytes32 indexed linkId, address indexed payer, uint256 amount);
+    event PaymentLinkCreated(
+        bytes32 indexed linkId,
+        address indexed freelancer,
+        uint256 amount,
+        address token,
+        uint32 destinationEid,
+        string metadata
+    );
+    event CrossChainPaymentInitiated(
+        bytes32 indexed linkId,
+        address indexed payer,
+        uint256 amount
+    );
     event PaymentCompleted(bytes32 indexed linkId);
 
     constructor(
         address _endpoint,
-        address _owner
-    ) OApp(_endpoint, _owner) Ownable(_owner) {}
+        address _owner,
+        address _token
+    ) OFTAdapter(_token, _owner, _endpoint) Ownable(_owner) {}
 
     function createPaymentLink(
         uint256 _amount,
@@ -44,14 +59,15 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
         uint32 _destinationEid,
         string calldata _metadata
     ) external returns (bytes32) {
-        bytes32 linkId = keccak256(abi.encodePacked(
+        bytes32 linkId = keccak256(
+            abi.encodePacked(
             msg.sender,
             _amount,
             _token,
             block.timestamp,
             block.number
-        ));
-
+            )
+        );
         
         paymentLinks[linkId] = PaymentLink({
             freelancer: msg.sender,
@@ -63,7 +79,14 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
             metadata: _metadata
         });
 
-        emit PaymentLinkCreated(linkId, msg.sender, _amount, _token, _destinationEid, _metadata);
+        emit PaymentLinkCreated(
+            linkId,
+            msg.sender,
+            _amount,
+            _token,
+            _destinationEid,
+            _metadata
+        );
         return linkId;
     }
 
@@ -80,7 +103,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
             payer: address(0),
             amount: link.amount,
             token: link.token,
-            freelancerSolanaAddress: bytes32(0)
+            freelancerAddress: address(0)
         });
 
         bytes memory message = abi.encode(payment);
@@ -89,7 +112,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
 
     function processPayment(
         bytes32 _linkId,
-        bytes32 _freelancerSolanaAddress,
+        address _freelancerAddress,
         bytes calldata _options
     ) external payable nonReentrant {
         PaymentLink storage link = paymentLinks[_linkId];
@@ -108,7 +131,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
             payer: msg.sender,
             amount: link.amount,
             token: link.token,
-            freelancerSolanaAddress: _freelancerSolanaAddress
+            freelancerAddress: _freelancerAddress
         });
 
         bytes memory message = abi.encode(payment);
@@ -132,7 +155,7 @@ contract PaymeeRouter is OApp, ReentrancyGuard {
         address /*_executor*/,
         bytes calldata /*_extraData*/
     ) internal override {
-        // Decode acknowledgment from Solana
+        // Decode acknowledgment from Ethereum Sepolia
         bytes32 linkId = abi.decode(_message, (bytes32));
         emit PaymentCompleted(linkId);
     }
