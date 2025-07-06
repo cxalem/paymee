@@ -10,6 +10,8 @@ Paymee Web3 lets any freelancer generate a shareable link their clients can pay 
 1. **Privy** – password-less onboarding and embedded, hardware-secured wallets.  
 2. **LayerZero V2** – omnichain messaging so payments can arrive from *any* EVM/L2/Solana/… chain and settle in the freelancer’s wallet.  
 3. **World ID** – proof-of-personhood ("one human, one account") to curb fraud and sybil attacks.
+4. **Hardhat** – For compilation purposes.
+
 
 The result is a friction-less payment UX for both sides:  
 • Clients can pay with the wallet & chain they already use.  
